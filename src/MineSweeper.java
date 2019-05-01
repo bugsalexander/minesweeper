@@ -6,27 +6,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
-// a game of MineSweeper
-class MineWorld extends World {
-
-    private MineModel grid;
-    private MineView view;
-
-    MineWorld(int width, int height, int bombs) {
-        this.grid = new MineModel(width, height, bombs);
-        this.view = new MineView(width, height);
-    }
-
-    @Override
-    public WorldScene makeScene() {
-        return null;
-    }
-
-    // deals with updating the correct tiles
-    public void onMouseClicked(Posn pos, String buttonName) {
-
-    }
-}
 
 // a MineModel to store mine and grid data.
 // Model for MineSweeper game
@@ -87,6 +66,7 @@ class MineModel {
 }
 
 // a MineView to store and modify the image of the grid.
+// View for MineSweeper game
 class MineView {
     // the width/height of one tile (square)
     private static final int TILE_SIZE = 10;
@@ -209,5 +189,21 @@ class MineView {
     }
 }
 
+// a MineController to deal with clicking and logic.
+// Controller for MineSweeper game
+class MineController {
 
+    // the Model
+    private MineModel model;
+
+    // the View
+    private MineView view;
+
+    // default constructor
+    MineController(MineModel model) {
+        this.model = model;
+    }
+
+
+}
 
