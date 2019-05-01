@@ -1,6 +1,7 @@
 import javalib.impworld.World;
 import javalib.impworld.WorldScene;
 import javalib.worldimages.*;
+import tester.Tester;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ class MineModel {
 // View for MineSweeper game
 class MineView {
     // the width/height of one tile (square)
-    private static final int TILE_SIZE = 10;
+    static final int TILE_SIZE = 20;
 
     // the WorldScene representing the view.
     private WorldScene view;
@@ -178,14 +179,14 @@ class MineView {
     private void drawNumColor(int num, Color color, int x, int y) {
         WorldImage square = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.GRAY);
         WorldImage text = new TextImage("" + num, 16, color);
-        this.addToView(new FrameImage(square.overlayImages(text), Color.BLACK), x, y);
+        this.addToView(new FrameImage(text.overlayImages(square), Color.BLACK), x, y);
     }
 
     // draws a bomb at the provided grid posn.
     public void drawBomb(int x, int y) {
         WorldImage base = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.GRAY);
         WorldImage bomb = new CircleImage(TILE_SIZE / 2, OutlineMode.SOLID, Color.BLACK);
-        this.addToView(new FrameImage(base.overlayImages(bomb), Color.BLACK), x, y);
+        this.addToView(new FrameImage(bomb.overlayImages(base), Color.BLACK), x, y);
     }
 }
 
@@ -207,3 +208,45 @@ class MineController {
 
 }
 
+// a world to test the view
+class TestView extends World {
+
+    MineView view;
+
+    TestView(MineView view) {
+        this.view = view;
+    }
+
+    @Override
+    public WorldScene makeScene() {
+        return this.view.drawView();
+    }
+
+    public void onKeyEvent(String key) {
+        if (key.equals("1")) {
+            this.view.drawOne(0, 0);
+        }
+        else if (key.equals("2")) {
+            this.view.drawTwo(1,  0);
+        }
+        else if (key.equals("3")) {
+            this.view.drawThree(2, 0);
+        }
+        else if (key.equals("0")) {
+            this.view.drawBomb(3, 0);
+        }
+
+    }
+}
+
+// tester
+class ExamplesMine {
+
+    void testView(Tester t) {
+        int width = 8;
+        int height = 8;
+
+        TestView tv = new TestView(new MineView(width, height));
+        tv.bigBang(width * MineView.TILE_SIZE, height * MineView.TILE_SIZE, 0.1);
+    }
+}
