@@ -19,6 +19,9 @@ class MineModel {
     private int width;
     private int height;
 
+    // default constructor
+    // produces a 2D arraylist of true/false, true if bomb, with # bombs as provided.
+    // TODO: # bombs provided > than width * height?
     MineModel(int width, int height, int bombs) {
         this.width = width;
         this.height = height;
@@ -57,12 +60,40 @@ class MineModel {
 
     // returns if there is a bomb at the provided coordinates.
     public boolean isBombAt(int x, int y) {
-        if (x >= 0 && x < width && y >= 0 && y < height) {
+        if (this.onBoard(x, y)) {
             return this.rows.get(y).get(x);
         }
         else {
-            throw new IllegalStateException("Tried to access an index not on the board");
+            return false;
         }
+    }
+
+    // returns if there are zero bombs around (and in) the provided coordinates.
+    public boolean isZero(int x, int y) {
+        // if we are a bomb, auto false.
+        if (this.isBombAt(x, y)) {
+            return false;
+        }
+        // else check all the neighbors being not bombs.
+        // for all -> return false
+        // return true
+        else if (this.isBombAt(x - 1, y - 1)) { return false; }
+        else if (this.isBombAt(x - 1, y)) { return false; }
+        else if (this.isBombAt(x - 1, y + 1)) { return false; }
+        else if (this.isBombAt(x, y - 1)) { return false; }
+        else if (this.isBombAt(x, y + 1)) { return false; }
+        else if (this.isBombAt(x + 1, y - 1)) { return false; }
+        else if (this.isBombAt(x + 1, y)) { return false; }
+        else if (this.isBombAt(x + 1, y - 1)) { return false; }
+
+        // else we are zero and return true
+        else { return true; }
+    }
+
+    // returns if the provided coordinates are on the board
+    // similar to a .hasNext() of a .next()
+    private boolean onBoard(int x, int y) {
+        return x >= 0 && x < width && y >= 0 && y < height;
     }
 }
 
@@ -106,6 +137,7 @@ class MineView {
     void drawSeven(int, int)
     void drawEight(int, int)
     void drawBomb(int, int)
+    void drawEnd()
      */
 
     // gets the complete image of the grid
@@ -114,7 +146,7 @@ class MineView {
     }
 
     // converts from grid coordinate to pixel coordinate
-    private int toPixel(int grid) {
+    public int toPixel(int grid) {
         return (TILE_SIZE / 2) + (grid * TILE_SIZE);
     }
 
@@ -188,11 +220,23 @@ class MineView {
         WorldImage bomb = new CircleImage(TILE_SIZE / 2, OutlineMode.SOLID, Color.BLACK);
         this.addToView(new FrameImage(bomb.overlayImages(base), Color.BLACK), x, y);
     }
+
+    // draws the end message
+    public void drawEnd() {
+        this.view = new WorldScene(this.width * TILE_SIZE, this.height * TILE_SIZE);
+        this.view.placeImageXY(
+                new RectangleImage(
+                        this.width * TILE_SIZE,
+                        this.height * TILE_SIZE,
+                        OutlineMode.SOLID,
+                        Color.BLACK),
+                this.width * TILE_SIZE / 2, this.height * TILE_SIZE / 2);
+    }
 }
 
 // a MineController to deal with clicking and logic.
 // Controller for MineSweeper game
-class MineController {
+class MineController extends World {
 
     // the Model
     private MineModel model;
@@ -201,11 +245,39 @@ class MineController {
     private MineView view;
 
     // default constructor
-    MineController(MineModel model) {
+    MineController(MineModel model, MineView view) {
         this.model = model;
+        this.view = view;
     }
 
+    // draws the game board
+    public WorldScene makeScene() {
+        return this.view.drawView();
+    }
 
+    // clicks on the game board.
+    public void onMouseClicked(Posn pos, String button) {
+        // convert the mouse posn to grid posn
+        int x = this.view.toPixel(pos.x);
+        int y = this.view.toPixel(pos.y);
+
+        // TODO: change order of which checked based on frequency of action.
+        // TODO: perhaps add a matrix of (hasBeenClicked) to check before action.
+        if (this.model.isBombAt(x, y)) {
+            // end the game scene with view.
+            this.view.drawEnd();
+        }
+        else if (this.model.isZero(x, y)) {
+            // floodfill all neighboring 0s.
+            // TODO: copmlicated
+        }
+        else {
+            // mark as #.
+            // get the # of neighboring bombs.
+            // else
+        }
+
+    }
 }
 
 // a world to test the view
