@@ -4,6 +4,7 @@ import javalib.worldimages.*;
 import tester.Tester;
 
 import java.awt.*;
+import java.awt.image.AreaAveragingScaleFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -14,6 +15,7 @@ class MineModel {
 
     // the grid of bombs.
     private ArrayList<ArrayList<Boolean>> rows;
+    private ArrayList<ArrayList<Boolean>> clicked;
 
     // width and height
     private int width;
@@ -35,7 +37,7 @@ class MineModel {
             for (int x = 0; x < width; x += 1) {
                 curRow.add(false);
             }
-            rows.add(curRow);
+            this.rows.add(curRow);
         }
 
         // add the bombs to the grid.
@@ -54,11 +56,53 @@ class MineModel {
             int x = val % width;
             int y = val / width;
 
-            rows.get(y).set(x, true);
+            // does mutation.
+            /*
+            ArrayList<Boolean> temp = this.rows.get(y);
+            temp.set(x, true);
+            this.rows.set(y, temp);
+             */
+            this.rows.get(y).set(x, true);
+
+        }
+
+        // instantiate clicked to be false for everything.
+        this.clicked = new ArrayList<>();
+
+        // for every single y value,
+        for (int y = 0; y < height; y += 1) {
+            // create a row in length width.
+            ArrayList<Boolean> curRow = new ArrayList<>();
+            for (int x = 0; x < width; x += 1) {
+                curRow.add(false);
+            }
+            this.clicked.add(curRow);
+        }
+    }
+
+
+    // changes a tile's status to clicked (true).
+    public void tileClick(int x, int y) {
+        if (this.onBoard(x, y)) {
+            this.clicked.get(y).set(x, true);
+        }
+        else {
+            return;
+        }
+    }
+
+    // returns if a tile has been clicked.
+    public boolean hasBeenClicked(int x, int y) {
+        if (this.onBoard(x, y)) {
+            return this.clicked.get(y).get(x);
+        }
+        else {
+            return false;
         }
     }
 
     // returns if there is a bomb at the provided coordinates.
+    // expects a grid coordinate.
     public boolean isBombAt(int x, int y) {
         if (this.onBoard(x, y)) {
             return this.rows.get(y).get(x);
@@ -69,31 +113,46 @@ class MineModel {
     }
 
     // returns if there are zero bombs around (and in) the provided coordinates.
-    public boolean isZero(int x, int y) {
-        // if we are a bomb, auto false.
-        if (this.isBombAt(x, y)) {
-            return false;
-        }
-        // else check all the neighbors being not bombs.
-        // for all -> return false
-        // return true
-        else if (this.isBombAt(x - 1, y - 1)) { return false; }
-        else if (this.isBombAt(x - 1, y)) { return false; }
-        else if (this.isBombAt(x - 1, y + 1)) { return false; }
-        else if (this.isBombAt(x, y - 1)) { return false; }
-        else if (this.isBombAt(x, y + 1)) { return false; }
-        else if (this.isBombAt(x + 1, y - 1)) { return false; }
-        else if (this.isBombAt(x + 1, y)) { return false; }
-        else if (this.isBombAt(x + 1, y - 1)) { return false; }
+    public int numNeighboringBombs(int x, int y) {
+        // the number of bombs on neighboring tiles
+        int bombs = 0;
 
-        // else we are zero and return true
-        else { return true; }
+        // for all -> if bomb, += 1.
+        if (this.isBombAt(x - 1, y - 1)) { bombs += 1; }
+        if (this.isBombAt(x - 1, y)) { bombs += 1; }
+        if (this.isBombAt(x - 1, y + 1)) { bombs += 1; }
+        if (this.isBombAt(x, y - 1)) { bombs += 1; }
+        if (this.isBombAt(x, y + 1)) { bombs += 1; }
+        if (this.isBombAt(x + 1, y - 1)) { bombs += 1; }
+        if (this.isBombAt(x + 1, y)) { bombs += 1; }
+        if (this.isBombAt(x + 1, y + 1)) { bombs += 1; }
+
+        return bombs;
     }
 
     // returns if the provided coordinates are on the board
     // similar to a .hasNext() of a .next()
     private boolean onBoard(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
+    }
+
+    // prints the tostring for testing
+    public String toString() {
+        String returnThis = "";
+        for (int y = 0; y < height; y += 1) {
+            for (int x = 0; x < width; x += 1) {
+                String square;
+                if (this.isBombAt(x, y)) {
+                    square = "o";
+                }
+                else {
+                    square = "x";
+                }
+                returnThis += (square + " ");
+            }
+            returnThis += "\n";
+        }
+        return returnThis;
     }
 }
 
@@ -146,8 +205,13 @@ class MineView {
     }
 
     // converts from grid coordinate to pixel coordinate
-    public int toPixel(int grid) {
+    private int toPixel(int grid) {
         return (TILE_SIZE / 2) + (grid * TILE_SIZE);
+    }
+
+    // converts from pixel coordinates to grid coordinates.
+    public int toGrid(int pixel) {
+        return pixel / TILE_SIZE;
     }
 
     // places a provided image at the given grid coordinates
@@ -232,6 +296,12 @@ class MineView {
                         Color.BLACK),
                 this.width * TILE_SIZE / 2, this.height * TILE_SIZE / 2);
     }
+
+    // draws a flag at the provided grid posn.
+    public void drawFlag(int x, int y) {
+        WorldImage flag = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.RED);
+        this.addToView(new FrameImage(flag, Color.BLACK), x, y);
+    }
 }
 
 // a MineController to deal with clicking and logic.
@@ -257,57 +327,71 @@ class MineController extends World {
 
     // clicks on the game board.
     public void onMouseClicked(Posn pos, String button) {
-        // convert the mouse posn to grid posn
-        int x = this.view.toPixel(pos.x);
-        int y = this.view.toPixel(pos.y);
+        // convert the mouse pixel posn to grid posn
+        int x = this.view.toGrid(pos.x);
+        int y = this.view.toGrid(pos.y);
 
-        // TODO: change order of which checked based on frequency of action.
-        // TODO: perhaps add a matrix of (hasBeenClicked) to check before action.
-        if (this.model.isBombAt(x, y)) {
-            // end the game scene with view.
-            this.view.drawEnd();
+        // if left button, update view with #.
+        if (button.equals("LeftButton")) {
+            if (this.model.hasBeenClicked(x, y)) {
+                return;
+            }
+            else {
+                // TODO: change order of which checked based on frequency of action.
+                // TODO: perhaps add a matrix of (hasBeenClicked) to check before action.
+                if (this.model.isBombAt(x, y)) {
+                    // end the game scene with view.
+                    this.view.drawBomb(x, y);
+                    //this.view.drawEnd();
+                }
+                // we know (x, y) is not a bomb.
+                else {
+                    int numNeighboringBombs = this.model.numNeighboringBombs(x, y);
+
+                    // if we have > 0 bombs in neighboring, mark as #.
+                    if (numNeighboringBombs > 0) {
+                        if (numNeighboringBombs == 1) {
+                            this.view.drawOne(x, y);
+                        }
+                        else if (numNeighboringBombs == 2) {
+                            this.view.drawTwo(x, y);
+                        }
+                        else if (numNeighboringBombs == 3) {
+                            this.view.drawThree(x, y);
+                        }
+                        else if (numNeighboringBombs == 4) {
+                            this.view.drawFour(x, y);
+                        }
+                        else if (numNeighboringBombs == 5) {
+                            this.view.drawFive(x, y);
+                        }
+                        else if (numNeighboringBombs == 6) {
+                            this.view.drawSix(x, y);
+                        }
+                        else if (numNeighboringBombs == 7) {
+                            this.view.drawSeven(x, y);
+                        }
+                        else {
+                            this.view.drawEight(x, y);
+                        }
+                    }
+                    // floodfill the neighboring zeroes.
+                    else {
+                        this.view.drawBlankPressed(x, y);
+                        // TODO : complicaedn
+                    }
+                }
+            }
+
         }
-        else if (this.model.isZero(x, y)) {
-            // floodfill all neighboring 0s.
-            // TODO: copmlicated
+        // else if right button, update flag.
+        else if (button.equals("RightButton")) {
+            this.view.drawFlag(x, y);
         }
+        // else do nothing.
         else {
-            // mark as #.
-            // get the # of neighboring bombs.
-            // else
+            return;
         }
-
-    }
-}
-
-// a world to test the view
-class TestView extends World {
-
-    MineView view;
-
-    TestView(MineView view) {
-        this.view = view;
-    }
-
-    @Override
-    public WorldScene makeScene() {
-        return this.view.drawView();
-    }
-
-    public void onKeyEvent(String key) {
-        if (key.equals("1")) {
-            this.view.drawOne(0, 0);
-        }
-        else if (key.equals("2")) {
-            this.view.drawTwo(1,  0);
-        }
-        else if (key.equals("3")) {
-            this.view.drawThree(2, 0);
-        }
-        else if (key.equals("0")) {
-            this.view.drawBomb(3, 0);
-        }
-
     }
 }
 
@@ -315,10 +399,17 @@ class TestView extends World {
 class ExamplesMine {
 
     void testView(Tester t) {
-        int width = 8;
-        int height = 8;
+        // currently set to medium
+        int width = 16;
+        int height = 16;
+        int bombs = 40;
 
-        TestView tv = new TestView(new MineView(width, height));
+        MineModel model = new MineModel(width, height, bombs);
+        MineView view = new MineView(width, height);
+        MineController tv = new MineController(model, view);
+
+        System.out.println(model);
+
         tv.bigBang(width * MineView.TILE_SIZE, height * MineView.TILE_SIZE, 0.1);
     }
 }
