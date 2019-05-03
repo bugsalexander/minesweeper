@@ -16,6 +16,7 @@ class MineModel {
     // the grid of bombs.
     private ArrayList<ArrayList<Boolean>> rows;
     private ArrayList<ArrayList<Boolean>> clicked;
+    private ArrayList<ArrayList<Boolean>> flagged;
 
     // width and height
     private int width;
@@ -78,8 +79,37 @@ class MineModel {
             }
             this.clicked.add(curRow);
         }
+
+        // instantiate flagged to be false for everything.
+        this.flagged = new ArrayList<>();
+
+        // for every single Y value;
+        for (int y = 0; y < height; y += 1) {
+            // create a row in length width.
+            ArrayList<Boolean> curRow = new ArrayList<>();
+            for (int x = 0; x < width; x += 1) {
+                curRow.add(false);
+            }
+            this.flagged.add(curRow);
+        }
     }
 
+    // toggles a flag
+    public void toggleFlag(int x, int y) {
+        // if on board and not yet clicked, toggle the flag.
+        if (this.onBoard(x, y) && !this.hasBeenClicked(x, y)) {
+            this.flagged.get(y).set(x, !this.flagged.get(y).get(x));
+        }
+        // don't fall off the end!
+        else {
+            return;
+        }
+    }
+
+    // returns if a tile has been flagged.
+    public boolean hasBeenFlagged(int x, int y) {
+        return this.onBoard(x, y) && !this.hasBeenClicked(x, y) && this.flagged.get(y).get(x);
+    }
 
     // changes a tile's status to clicked (true).
     public void tileClick(int x, int y) {
@@ -220,7 +250,7 @@ class MineView {
     }
 
     // draws a blank tile at the provided grid posn (unclicked)
-    private void drawBlank(int x, int y) {
+    public void drawBlank(int x, int y) {
         WorldImage base = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.LIGHT_GRAY);
         this.addToView(new FrameImage(base, Color.BLACK), x, y);
     }
@@ -333,12 +363,13 @@ class MineController extends World {
 
         // if left button, update view with #.
         if (button.equals("LeftButton")) {
-            if (this.model.hasBeenClicked(x, y)) {
+            if (this.model.hasBeenClicked(x, y) || this.model.hasBeenFlagged(x, y)) {
                 return;
             }
             else {
+                // has now been clicked.
+                this.model.tileClick(x, y);
                 // TODO: change order of which checked based on frequency of action.
-                // TODO: perhaps add a matrix of (hasBeenClicked) to check before action.
                 if (this.model.isBombAt(x, y)) {
                     // end the game scene with view.
                     this.view.drawBomb(x, y);
@@ -386,9 +417,24 @@ class MineController extends World {
         }
         // else if right button, update flag.
         else if (button.equals("RightButton")) {
-            this.view.drawFlag(x, y);
+            // if already clicked, do nothing.
+            if (this.model.hasBeenClicked(x, y)) {
+                // do nothing
+                return;
+            }
+            // if flagged, unflag. if unflagged, flag.
+            else {
+                if (this.model.hasBeenFlagged(x, y)) {
+                    this.view.drawBlank(x, y);
+                }
+                else {
+                    this.view.drawFlag(x, y);
+                }
+                // AND toggle the flag.
+                this.model.toggleFlag(x, y);
+            }
         }
-        // else do nothing.
+        // a weird mouse button was pressed? do nothing.
         else {
             return;
         }
