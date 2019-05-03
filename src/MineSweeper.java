@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.image.AreaAveragingScaleFilter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Stack;
 
 
 // a MineModel to store mine and grid data.
@@ -162,7 +163,7 @@ class MineModel {
 
     // returns if the provided coordinates are on the board
     // similar to a .hasNext() of a .next()
-    private boolean onBoard(int x, int y) {
+    public boolean onBoard(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
@@ -363,56 +364,7 @@ class MineController extends World {
 
         // if left button, update view with #.
         if (button.equals("LeftButton")) {
-            if (this.model.hasBeenClicked(x, y) || this.model.hasBeenFlagged(x, y)) {
-                return;
-            }
-            else {
-                // has now been clicked.
-                this.model.tileClick(x, y);
-                // TODO: change order of which checked based on frequency of action.
-                if (this.model.isBombAt(x, y)) {
-                    // end the game scene with view.
-                    this.view.drawBomb(x, y);
-                    //this.view.drawEnd();
-                }
-                // we know (x, y) is not a bomb.
-                else {
-                    int numNeighboringBombs = this.model.numNeighboringBombs(x, y);
-
-                    // if we have > 0 bombs in neighboring, mark as #.
-                    if (numNeighboringBombs > 0) {
-                        if (numNeighboringBombs == 1) {
-                            this.view.drawOne(x, y);
-                        }
-                        else if (numNeighboringBombs == 2) {
-                            this.view.drawTwo(x, y);
-                        }
-                        else if (numNeighboringBombs == 3) {
-                            this.view.drawThree(x, y);
-                        }
-                        else if (numNeighboringBombs == 4) {
-                            this.view.drawFour(x, y);
-                        }
-                        else if (numNeighboringBombs == 5) {
-                            this.view.drawFive(x, y);
-                        }
-                        else if (numNeighboringBombs == 6) {
-                            this.view.drawSix(x, y);
-                        }
-                        else if (numNeighboringBombs == 7) {
-                            this.view.drawSeven(x, y);
-                        }
-                        else {
-                            this.view.drawEight(x, y);
-                        }
-                    }
-                    // floodfill the neighboring zeroes.
-                    else {
-                        this.view.drawBlankPressed(x, y);
-                        // TODO : complicaedn
-                    }
-                }
-            }
+            this.leftClick(x, y);
 
         }
         // else if right button, update flag.
@@ -437,6 +389,124 @@ class MineController extends World {
         // a weird mouse button was pressed? do nothing.
         else {
             return;
+        }
+    }
+
+    // takes action to left-click on a tile and flood-fill zero tiles.
+    private void floodFill(int startX, int startY) {
+        // invariant: should only ever be called on non-bomb tiles.
+
+        // perform depth first search on nearby tiles, coloring them if not and otherwise continuing.
+        Stack<Posn> toFill = new Stack<>();
+        toFill.push(new Posn(startX, startY));
+
+        // while we have nodes to check, check them.
+        while (!toFill.isEmpty()) {
+            Posn curr = toFill.pop();
+            int x = curr.x;
+            int y = curr.y;
+
+            // if already clicked, not on board, or bomb, next.
+            if (this.model.hasBeenClicked(x, y) || !this.model.onBoard(x, y) || this.model.isBombAt(x, y)) {
+
+            }
+            // if we are number tile, color and next.
+            else if (this.model.numNeighboringBombs(x, y) > 0) {
+                this.numberTile(x, y, this.model.numNeighboringBombs(x, y));
+            }
+            // if we are zero, draw self, add neighbors and continue.
+            else {
+                this.view.drawBlankPressed(x, y);
+                toFill.push(new Posn(x - 1, y - 1));
+                toFill.push(new Posn(x - 1, y));
+                toFill.push(new Posn(x - 1, y + 1));
+                toFill.push(new Posn(x, y - 1));
+                toFill.push(new Posn(x, y + 1));
+                toFill.push(new Posn(x + 1, y - 1));
+                toFill.push(new Posn(x + 1, y));
+                toFill.push(new Posn(x + 1, y + 1));
+            }
+            // we are now clicked.
+            this.model.tileClick(x, y);
+        }
+    }
+
+    // human click.
+    private void leftClick(int x, int y) {
+        if (this.model.hasBeenClicked(x, y) || this.model.hasBeenFlagged(x, y)) {
+            return;
+        }
+        else {
+            // TODO: change order of which checked based on frequency of action.
+            if (this.model.isBombAt(x, y)) {
+                // end the game scene with view.
+                this.view.drawBomb(x, y);
+                //this.view.drawEnd();
+
+                // has now been clicked.
+                this.model.tileClick(x, y);
+            }
+            // we know (x, y) is not a bomb.
+            else {
+                int numNeighboringBombs = this.model.numNeighboringBombs(x, y);
+
+                // if we have > 0 bombs in neighboring, mark as #.
+                if (numNeighboringBombs > 0) {
+
+                    // has now been clicked.
+                    this.model.tileClick(x, y);
+
+                    this.numberTile(x, y, numNeighboringBombs);
+                }
+                // floodfill the neighboring tiles/zeroes. (we are a zero)
+                else {
+
+                    this.floodFill(x, y);
+                    /*
+                    this.view.drawBlankPressed(x, y);
+
+                    // this tile has been clicked.
+                    this.model.tileClick(x, y);
+
+                    this.floodFill(x - 1, y - 1);
+                    this.floodFill(x - 1, y);
+                    this.floodFill(x - 1, y + 1);
+                    this.floodFill(x, y - 1);
+                    this.floodFill(x, y + 1);
+                    this.floodFill(x + 1, y - 1);
+                    this.floodFill(x + 1, y);
+                    this.floodFill(x + 1, y + 1);
+                     */
+                }
+            }
+        }
+    }
+
+    // color a provided tile by a number.
+    public void numberTile(int x, int y, int numNeighboringBombs) {
+        if (numNeighboringBombs == 1) {
+            this.view.drawOne(x, y);
+        }
+        else if (numNeighboringBombs == 2) {
+            this.view.drawTwo(x, y);
+        }
+        else if (numNeighboringBombs == 3) {
+            this.view.drawThree(x, y);
+        }
+        else if (numNeighboringBombs == 4) {
+            this.view.drawFour(x, y);
+        }
+        else if (numNeighboringBombs == 5) {
+            this.view.drawFive(x, y);
+        }
+        else if (numNeighboringBombs == 6) {
+            this.view.drawSix(x, y);
+        }
+        else if (numNeighboringBombs == 7) {
+            this.view.drawSeven(x, y);
+        }
+        else {
+            this.view.drawEight(x, y);
         }
     }
 }
