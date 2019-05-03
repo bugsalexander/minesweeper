@@ -15,13 +15,19 @@ import java.util.Stack;
 class MineModel {
 
     // the grid of bombs.
-    private ArrayList<ArrayList<Boolean>> rows;
-    private ArrayList<ArrayList<Boolean>> clicked;
-    private ArrayList<ArrayList<Boolean>> flagged;
+    private ArrayList<ArrayList<Boolean>> rows; // true if bomb, false if no bomb.
+    private ArrayList<ArrayList<Boolean>> clicked; // true if clicked
+    private ArrayList<ArrayList<Boolean>> flagged; // true if flagged.
 
-    // width and height
+    // width and height and numbombs.
     private int width;
     private int height;
+    private int numBombs;
+
+    // # bombs flagged.
+    // # tiles clicked.
+    private int bombsFlagged;
+    private int tilesClicked;
 
     // default constructor
     // produces a 2D arraylist of true/false, true if bomb, with # bombs as provided.
@@ -29,6 +35,10 @@ class MineModel {
     MineModel(int width, int height, int bombs) {
         this.width = width;
         this.height = height;
+        this.numBombs = bombs;
+
+        this.bombsFlagged = 0;
+        this.tilesClicked = 0;
 
         this.rows = new ArrayList<>();
 
@@ -99,7 +109,17 @@ class MineModel {
     public void toggleFlag(int x, int y) {
         // if on board and not yet clicked, toggle the flag.
         if (this.onBoard(x, y) && !this.hasBeenClicked(x, y)) {
-            this.flagged.get(y).set(x, !this.flagged.get(y).get(x));
+            boolean curState = this.flagged.get(y).get(x);
+            // currently flagged, unflagging.
+            if (this.hasBeenFlagged(x, y)) {
+                this.bombsFlagged -= 1;
+            }
+            else {
+                this.bombsFlagged += 1;
+            }
+
+            // toggle the flag.
+            this.flagged.get(y).set(x, !curState);
         }
         // don't fall off the end!
         else {
@@ -112,10 +132,27 @@ class MineModel {
         return this.onBoard(x, y) && !this.hasBeenClicked(x, y) && this.flagged.get(y).get(x);
     }
 
+    // returns the number of remaining bombs.
+    public int numRemainingBombs() {
+        return this.numBombs - this.bombsFlagged;
+    }
+
+    // returns the number of tiles sclicked.
+    public int numRemainingTiles() {
+        return (this.width * this.height) - this.tilesClicked - this.numBombs;
+    }
+
     // changes a tile's status to clicked (true).
     public void tileClick(int x, int y) {
         if (this.onBoard(x, y)) {
-            this.clicked.get(y).set(x, true);
+            // if already flagged, then don't add 1.
+            if (this.hasBeenClicked(x, y)) {
+                return;
+            }
+            else {
+                this.clicked.get(y).set(x, true);
+                this.tilesClicked += 1;
+            }
         }
         else {
             return;
@@ -333,6 +370,19 @@ class MineView {
         WorldImage flag = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.RED);
         this.addToView(new FrameImage(flag, Color.BLACK), x, y);
     }
+
+    // draws the bombCount on the screen.
+    public void drawBombCount(int bombCount, int tileCount) {
+        WorldImage text = new TextImage("" + bombCount, 16, Color.YELLOW);
+        WorldImage back;
+        if (bombCount == 0 && tileCount == 0) {
+            back = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.MAGENTA);
+        }
+        else {
+            back = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.LIGHT_GRAY);
+        }
+        this.view.placeImageXY(text.overlayImages(back), TILE_SIZE, TILE_SIZE);
+    }
 }
 
 // a MineController to deal with clicking and logic.
@@ -349,6 +399,7 @@ class MineController extends World {
     MineController(MineModel model, MineView view) {
         this.model = model;
         this.view = view;
+        this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles());
     }
 
     // draws the game board
@@ -390,6 +441,9 @@ class MineController extends World {
         else {
             return;
         }
+
+        // update the bombcount displayed.
+        this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles());
     }
 
     // takes action to left-click on a tile and flood-fill zero tiles.
@@ -460,23 +514,8 @@ class MineController extends World {
                 }
                 // floodfill the neighboring tiles/zeroes. (we are a zero)
                 else {
-
+                    // automatically takes care of tileClick.
                     this.floodFill(x, y);
-                    /*
-                    this.view.drawBlankPressed(x, y);
-
-                    // this tile has been clicked.
-                    this.model.tileClick(x, y);
-
-                    this.floodFill(x - 1, y - 1);
-                    this.floodFill(x - 1, y);
-                    this.floodFill(x - 1, y + 1);
-                    this.floodFill(x, y - 1);
-                    this.floodFill(x, y + 1);
-                    this.floodFill(x + 1, y - 1);
-                    this.floodFill(x + 1, y);
-                    this.floodFill(x + 1, y + 1);
-                     */
                 }
             }
         }
@@ -516,9 +555,9 @@ class ExamplesMine {
 
     void testView(Tester t) {
         // currently set to medium
-        int width = 16;
-        int height = 16;
-        int bombs = 40;
+        int width = 16; // 16
+        int height = 16; // 16
+        int bombs = 40; // 40
 
         MineModel model = new MineModel(width, height, bombs);
         MineView view = new MineView(width, height);
