@@ -1,6 +1,13 @@
 import tester.Tester;
 
-// tester
+
+/**
+ * Examples class to run the game.
+ * MineSweeper game.
+ *
+ * @author Alex Takayama
+ * @since 2019-05-1
+ */
 class ExamplesMine {
 
     void testView(Tester t) {

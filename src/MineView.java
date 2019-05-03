@@ -3,8 +3,14 @@ import javalib.worldimages.*;
 
 import java.awt.*;
 
-// a MineView to store and modify the image of the grid.
-// View for MineSweeper game
+
+/**
+ * a MineView to store and modify the image of the grid.
+ * View for MineSweeper game
+ *
+ * @author Alex Takayama
+ * @since 2019-05-1
+ */
 class MineView {
     // the width/height of one tile (square)
     static final int TILE_SIZE = 20;

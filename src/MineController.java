@@ -4,8 +4,14 @@ import javalib.worldimages.Posn;
 
 import java.util.Stack;
 
-// a MineController to deal with clicking and logic.
-// Controller for MineSweeper game
+
+/**
+ * the MineController to deal with clicking and logic.
+ * Controller for MineSweeper game
+ *
+ * @author Alex Takayama
+ * @since 2019-05-1
+ */
 class MineController extends World {
 
     // the Model
@@ -35,7 +41,6 @@ class MineController extends World {
         // if left button, update view with #.
         if (button.equals("LeftButton")) {
             this.leftClick(x, y);
-
         }
         // else if right button, update flag.
         else if (button.equals("RightButton")) {
@@ -80,36 +85,35 @@ class MineController extends World {
             int y = curr.y;
 
             // if already clicked, not on board, or bomb, next.
-            if (this.model.hasBeenClicked(x, y) || !this.model.onBoard(x, y) || this.model.isBombAt(x, y)) {
+            // if not clicked, on board, and no bomb
+            if (!this.model.hasBeenClicked(x, y) && this.model.onBoard(x, y) && !this.model.isBombAt(x, y)) {
+                // if we are number tile, color and next.
+                if (this.model.numNeighboringBombs(x, y) > 0) {
+                    this.numberTile(x, y, this.model.numNeighboringBombs(x, y));
+                }
+                // if we are zero, draw self, add neighbors and continue.
+                else {
+                    this.view.drawBlankPressed(x, y);
+                    toFill.push(new Posn(x - 1, y - 1));
+                    toFill.push(new Posn(x - 1, y));
+                    toFill.push(new Posn(x - 1, y + 1));
+                    toFill.push(new Posn(x, y - 1));
+                    toFill.push(new Posn(x, y + 1));
+                    toFill.push(new Posn(x + 1, y - 1));
+                    toFill.push(new Posn(x + 1, y));
+                    toFill.push(new Posn(x + 1, y + 1));
+                }
+                // we are now clicked.
+                this.model.tileClick(x, y);
+            }
 
-            }
-            // if we are number tile, color and next.
-            else if (this.model.numNeighboringBombs(x, y) > 0) {
-                this.numberTile(x, y, this.model.numNeighboringBombs(x, y));
-            }
-            // if we are zero, draw self, add neighbors and continue.
-            else {
-                this.view.drawBlankPressed(x, y);
-                toFill.push(new Posn(x - 1, y - 1));
-                toFill.push(new Posn(x - 1, y));
-                toFill.push(new Posn(x - 1, y + 1));
-                toFill.push(new Posn(x, y - 1));
-                toFill.push(new Posn(x, y + 1));
-                toFill.push(new Posn(x + 1, y - 1));
-                toFill.push(new Posn(x + 1, y));
-                toFill.push(new Posn(x + 1, y + 1));
-            }
-            // we are now clicked.
-            this.model.tileClick(x, y);
         }
     }
 
-    // human click.
+    // human leftclick.
     private void leftClick(int x, int y) {
-        if (this.model.hasBeenClicked(x, y) || this.model.hasBeenFlagged(x, y)) {
-            return;
-        }
-        else {
+        // if we have not been clicked and not been flagged, compute left-click.
+        if (!this.model.hasBeenClicked(x, y) && !this.model.hasBeenFlagged(x, y)) {
             // TODO: change order of which checked based on frequency of action.
             if (this.model.isBombAt(x, y)) {
                 // end the game scene with view.
@@ -125,7 +129,6 @@ class MineController extends World {
 
                 // if we have > 0 bombs in neighboring, mark as #.
                 if (numNeighboringBombs > 0) {
-
                     // has now been clicked.
                     this.model.tileClick(x, y);
 
@@ -141,7 +144,7 @@ class MineController extends World {
     }
 
     // color a provided tile by a number.
-    public void numberTile(int x, int y, int numNeighboringBombs) {
+    private void numberTile(int x, int y, int numNeighboringBombs) {
         if (numNeighboringBombs == 1) {
             this.view.drawOne(x, y);
         }

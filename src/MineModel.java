@@ -1,8 +1,14 @@
 import java.util.ArrayList;
 import java.util.Collections;
 
-// a MineModel to store mine and grid data.
-// Model for MineSweeper game
+
+/**
+ * a MineModel to store mine and grid data.
+ * Model for MineSweeper game
+ *
+ * @author Alex Takayama
+ * @since 2019-05-1
+ */
 class MineModel {
 
     // the grid of bombs.
@@ -112,10 +118,6 @@ class MineModel {
             // toggle the flag.
             this.flagged.get(y).set(x, !curState);
         }
-        // don't fall off the end!
-        else {
-            return;
-        }
     }
 
     // returns if a tile has been flagged.
@@ -144,9 +146,6 @@ class MineModel {
                 this.clicked.get(y).set(x, true);
                 this.tilesClicked += 1;
             }
-        }
-        else {
-            return;
         }
     }
 
