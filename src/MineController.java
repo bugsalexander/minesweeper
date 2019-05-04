@@ -23,10 +23,19 @@ class MineController extends World {
     // whether or not a game is in session.
     boolean inSession;
 
+    // width and height and bombs.
+    int width;
+    int height;
+    int bombs;
+
     // default constructor
-    MineController(MineModel model, MineView view) {
-        this.model = model;
-        this.view = view;
+    MineController(int width, int height, int bombs) {
+        this.width = width;
+        this.height = height;
+        this.bombs = bombs;
+
+        this.model = new MineModel(width, height, bombs);
+        this.view = new MineView(width, height);
         this.inSession = true;
 
         this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
@@ -159,6 +168,15 @@ class MineController extends World {
 
                 // has now been clicked.
                 this.model.tileClick(x, y);
+
+                // draw all the bombs on the board.
+                for (y = 0; y < height; y += 1) {
+                    for (x = 0; x < width; x += 1) {
+                        if (this.model.isBombAt(x, y) && !this.model.hasBeenFlagged(x, y)) {
+                            this.view.drawBomb(x, y);
+                        }
+                    }
+                }
 
                 this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), true);
 

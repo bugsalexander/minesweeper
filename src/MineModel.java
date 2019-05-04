@@ -107,6 +107,9 @@ class MineModel {
             }
             this.flagged.add(curRow);
         }
+
+        // TODO: remove for testing purposes.
+        System.out.println(this);
     }
 
     // toggles a flag
