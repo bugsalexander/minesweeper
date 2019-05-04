@@ -14,10 +14,8 @@ import java.util.Stack;
  */
 class MineController extends World {
 
-    // the Model
+    // the Model and View
     private MineModel model;
-
-    // the View
     private MineView view;
 
     // whether or not a game is in session.
@@ -94,6 +92,32 @@ class MineController extends World {
             return;
         }
 
+        // deal with winning or losing the game HERE.
+        // TODO move winning/losing game to here.
+
+        int numBombsAt = this.model.numNeighboringBombs(x, y);
+
+        // we know (x, y) is a bomb.
+        if (button.equals("LeftButton") && this.model.isBombAt(x, y)) {
+            // draw all the non-flagged bombs on the board.
+            for (y = 0; y < height; y += 1) {
+                for (x = 0; x < width; x += 1) {
+                    if (this.model.isBombAt(x, y) && !this.model.hasBeenFlagged(x, y)) {
+                        this.view.drawBomb(x, y);
+                    }
+                }
+            }
+
+            this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), true);
+
+            this.inSession = false;
+        }
+        // otherwise if the game is Winning?
+        else if (this.model.numRemainingBombs() == 0 && this.model.numRemainingTiles() == 0) {
+            this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
+            this.inSession = false;
+        }
+
     }
 
     // takes action to left-click on a tile and flood-fill zero tiles.
@@ -160,27 +184,6 @@ class MineController extends World {
 
                 // update the bombcount displayed.
                 this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
-            }
-            // we know (x, y) is a bomb.
-            else {
-                // end the game scene with view.
-                this.view.drawBomb(x, y);
-
-                // has now been clicked.
-                this.model.tileClick(x, y);
-
-                // draw all the bombs on the board.
-                for (y = 0; y < height; y += 1) {
-                    for (x = 0; x < width; x += 1) {
-                        if (this.model.isBombAt(x, y) && !this.model.hasBeenFlagged(x, y)) {
-                            this.view.drawBomb(x, y);
-                        }
-                    }
-                }
-
-                this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), true);
-
-                this.inSession = false;
             }
         }
     }
