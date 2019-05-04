@@ -16,7 +16,7 @@ class MineModel {
     private ArrayList<ArrayList<Boolean>> clicked; // true if clicked
     private ArrayList<ArrayList<Boolean>> flagged; // true if flagged.
 
-    // width and height and numbombs.
+    // width and height and numBombs.
     private int width;
     private int height;
     private int numBombs;
@@ -34,8 +34,15 @@ class MineModel {
         this.height = height;
         this.numBombs = bombs;
 
-        this.bombsFlagged = 0;
+        // reset the board.
+        // auto sets bombsFlagged and tileClicked to zero.
+        this.resetBoard();
+    }
+
+    // resets the board state
+    public void resetBoard() {
         this.tilesClicked = 0;
+        this.bombsFlagged = 0;
 
         this.rows = new ArrayList<>();
 
@@ -59,7 +66,7 @@ class MineModel {
         Collections.shuffle(bombChoice);
 
         // choose the first bombs indices, and set them to bombs.
-        for (int i = 0; i < bombs; i += 1) {
+        for (int i = 0; i < this.numBombs; i += 1) {
             int val = bombChoice.get(i);
 
             int x = val % width;

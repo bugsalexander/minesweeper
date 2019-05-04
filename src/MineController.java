@@ -20,11 +20,16 @@ class MineController extends World {
     // the View
     private MineView view;
 
+    // whether or not a game is in session.
+    boolean inSession;
+
     // default constructor
     MineController(MineModel model, MineView view) {
         this.model = model;
         this.view = view;
-        this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles());
+        this.inSession = true;
+
+        this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
     }
 
     // draws the game board
@@ -34,12 +39,23 @@ class MineController extends World {
 
     // clicks on the game board.
     public void onMouseClicked(Posn pos, String button) {
+        // if game not in session, then start new game.
+        if (!this.inSession) {
+            this.model.resetBoard();
+
+            this.view.resetView(this.model.numRemainingBombs(), this.model.numRemainingTiles());
+            this.inSession = true;
+
+            return;
+        }
+
         // convert the mouse pixel posn to grid posn
         int x = this.view.toGrid(pos.x);
         int y = this.view.toGrid(pos.y);
 
         // if left button, update view with #.
         if (button.equals("LeftButton")) {
+            // auto updates drawing bombcount
             this.leftClick(x, y);
         }
         // else if right button, update flag.
@@ -60,14 +76,15 @@ class MineController extends World {
                 // AND toggle the flag.
                 this.model.toggleFlag(x, y);
             }
+
+            // update the bombcount displayed.
+            this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
         }
         // a weird mouse button was pressed? do nothing.
         else {
             return;
         }
 
-        // update the bombcount displayed.
-        this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles());
     }
 
     // takes action to left-click on a tile and flood-fill zero tiles.
@@ -114,17 +131,9 @@ class MineController extends World {
     private void leftClick(int x, int y) {
         // if we have not been clicked and not been flagged, compute left-click.
         if (!this.model.hasBeenClicked(x, y) && !this.model.hasBeenFlagged(x, y)) {
-            // TODO: change order of which checked based on frequency of action.
-            if (this.model.isBombAt(x, y)) {
-                // end the game scene with view.
-                this.view.drawBomb(x, y);
-                //this.view.drawEnd();
-
-                // has now been clicked.
-                this.model.tileClick(x, y);
-            }
-            // we know (x, y) is not a bomb.
-            else {
+            // if there is no bomb
+            if (!this.model.isBombAt(x, y)) {
+                // get the num neighboring bombs.
                 int numNeighboringBombs = this.model.numNeighboringBombs(x, y);
 
                 // if we have > 0 bombs in neighboring, mark as #.
@@ -139,6 +148,21 @@ class MineController extends World {
                     // automatically takes care of tileClick.
                     this.floodFill(x, y);
                 }
+
+                // update the bombcount displayed.
+                this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), false);
+            }
+            // we know (x, y) is a bomb.
+            else {
+                // end the game scene with view.
+                this.view.drawBomb(x, y);
+
+                // has now been clicked.
+                this.model.tileClick(x, y);
+
+                this.view.drawBombCount(this.model.numRemainingBombs(), this.model.numRemainingTiles(), true);
+
+                this.inSession = false;
             }
         }
     }

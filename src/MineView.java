@@ -157,15 +157,29 @@ class MineView {
     }
 
     // draws the bombCount on the screen.
-    public void drawBombCount(int bombCount, int tileCount) {
+    public void drawBombCount(int bombCount, int tileCount, boolean isEnd) {
         WorldImage text = new TextImage("" + bombCount, 16, Color.YELLOW);
         WorldImage back;
         if (bombCount == 0 && tileCount == 0) {
             back = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.MAGENTA);
         }
+        else if (isEnd) {
+            back = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.RED);
+        }
         else {
             back = new RectangleImage(TILE_SIZE, TILE_SIZE, OutlineMode.SOLID, Color.LIGHT_GRAY);
         }
         this.view.placeImageXY(text.overlayImages(back), TILE_SIZE, TILE_SIZE);
+    }
+
+    // resets the view.
+    public void resetView(int bombCount, int tileCount) {
+        for (int y = 0; y < height; y += 1) {
+            for (int x = 0; x < width; x += 1) {
+                this.drawBlank(x, y);
+            }
+        }
+        // draws the new bombCount.
+        this.drawBombCount(bombCount, tileCount, false);
     }
 }
