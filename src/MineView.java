@@ -182,4 +182,12 @@ class MineView {
         // draws the new bombCount.
         this.drawBombCount(bombCount, tileCount, false);
     }
+
+    // draws an incorrect bomb marker.
+    // TODO: fix this function o work properly.
+    public void drawWrongBomb(int x, int y) {
+        WorldImage lin1 = new LineImage(new Posn(TILE_SIZE, TILE_SIZE), Color.BLACK);
+        WorldImage lin2 = new LineImage(new Posn(-TILE_SIZE, TILE_SIZE), Color.BLACK);
+        this.addToView(new FrameImage(lin1.overlayImages(lin2)), x, y);
+    }
 }

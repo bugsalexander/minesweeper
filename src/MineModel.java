@@ -34,6 +34,10 @@ class MineModel {
         this.height = height;
         this.numBombs = bombs;
 
+        if (this.numBombs > this.width * this.height) {
+            throw new IllegalArgumentException("the # of bombs provided was greater than the # of board tiles");
+        }
+
         // reset the board.
         // auto sets bombsFlagged and tileClicked to zero.
         this.resetBoard();
@@ -108,7 +112,7 @@ class MineModel {
             this.flagged.add(curRow);
         }
 
-        // TODO: remove for testing purposes.
+        // TODO: for testing purposes. remove later.
         System.out.println(this);
     }
 
